@@ -1,11 +1,36 @@
- #include "mainwindow.h"
+//-------------------------------------------------
+//
+//    Copyright 2019 Brice Gay (brice.gay1@gmail.com)
+//
+//    This file is part of souris-distributeur.
+//
+//    souris-distributeur is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    any later version.
+//
+//    souris-distributeur is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with souris-distributeur.  If not, see <https://www.gnu.org/licenses/>.
+//
+//-------------------------------------------------
+
+
+#include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <math.h>
 #include <algorithm>
+#include <ui_tutoriel.h>
+
 
 #include <QtCore/QRandomGenerator>
 
 #include <QTimer>
+#include <qdialog.h>
 
 using namespace std;
 
@@ -15,9 +40,10 @@ QClipboard *clipboard = QApplication::clipboard();
 QChart::AnimationOptions options(1);
 int nbSourisCetteTaille[20];
 QModelIndex q = QModelIndex();
+QDialog *tutorielDialog;
+
 
 MainWindow::MainWindow(QWidget *parent) :
-
     QMainWindow(parent),
 
     ui(new Ui::MainWindow) {
@@ -40,6 +66,13 @@ MainWindow::MainWindow(QWidget *parent) :
     timer->start(300);
 
     connect(ui->getDataButton, SIGNAL(clicked(bool)), this, SLOT(onGetDataButtonClicked()));
+
+    tutorielDialog = new QDialog;
+    Ui::Dialog ui;
+    ui.setupUi(tutorielDialog);
+
+
+
 }
 
 MainWindow::~MainWindow()
@@ -307,3 +340,9 @@ void MainWindow::stopCalculs() {
 }
 
 
+
+void MainWindow::on_helpButton_clicked() {
+
+    tutorielDialog->show();
+
+}

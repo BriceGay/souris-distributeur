@@ -1,6 +1,25 @@
 #-------------------------------------------------
 #
-# Project created by QtCreator 2019-04-03T16:31:47
+#    Copyright 2019 Brice Gay (brice.gay1@gmail.com)
+#
+#    This file is part of souris-distributeur.
+#
+#    souris-distributeur is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    any later version.
+#
+#    souris-distributeur is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with souris-distributeur.  If not, see <https://www.gnu.org/licenses/>.
+#
+#
+#
+#    Project created by QtCreator 2019-04-03T16:31:47
 #
 #-------------------------------------------------
 
@@ -32,7 +51,8 @@ HEADERS += \
         mainwindow.h
 
 FORMS += \
-        mainwindow.ui
+        mainwindow.ui \
+        tutoriel.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
