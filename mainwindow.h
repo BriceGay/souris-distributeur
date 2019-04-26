@@ -34,6 +34,9 @@
 #include <qstandarditemmodel.h>
 #include <qvalueaxis.h>
 #include <vector>
+#include <algorithm>
+#include <math.h>
+
 
 using namespace std;
 
@@ -55,14 +58,6 @@ typedef QList<DataList> DataTable;
 
 QT_CHARTS_USE_NAMESPACE
 
-namespace Ui {
-class MainWindow;
-}
-
-class MainWindow : public QMainWindow
-{
-    Q_OBJECT
-
 struct Souris {
     QString name;
     double tailleOriginale;
@@ -71,6 +66,18 @@ struct Souris {
         return taille < s.taille;
     }
 };
+
+
+
+namespace Ui {
+class MainWindow;
+}
+
+class MainWindow : public QMainWindow
+{
+    Q_OBJECT
+
+
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
@@ -94,11 +101,18 @@ private:
     void afficherTableauDatas();
     int getClipboardDatas();
     void setPhase2Enabled(bool enabled);
-    void lancerCalculs();
-    void stopCalculs();
     void calculerParametresSerie();
 
-private:
+
+    void startGenetique();
+    void stopGenetique();
+    void init();
+    void evaluation();
+    void selection();
+    void croisement();
+    void mutation();
+
+public:
     //souris
     int nbSouris;
     vector<Souris> mSouris;
@@ -108,6 +122,8 @@ private:
     double moyenne;
     double variance;
     double medianne;
+    int nbSourisUtilisees;
+    vector<int> taillesGroupes;
 
     bool calculsEnCours = false;
 
@@ -122,5 +138,7 @@ private:
 
 
 };
+
+;
 
 #endif // MAINWINDOW_H

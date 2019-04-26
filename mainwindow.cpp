@@ -22,15 +22,16 @@
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <math.h>
-#include <algorithm>
 #include <ui_tutoriel.h>
+#include <thread>
 
 
 #include <QtCore/QRandomGenerator>
-
 #include <QTimer>
 #include <qdialog.h>
+
+#include <stdlib.h>     /* srand, rand */
+#include <time.h>       /* time */
 
 using namespace std;
 
@@ -45,7 +46,6 @@ QDialog *tutorielDialog;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-
     ui(new Ui::MainWindow) {
 
     ui->setupUi(this);
@@ -70,9 +70,6 @@ MainWindow::MainWindow(QWidget *parent) :
     tutorielDialog = new QDialog;
     Ui::Dialog ui;
     ui.setupUi(tutorielDialog);
-
-
-
 }
 
 MainWindow::~MainWindow()
@@ -112,7 +109,6 @@ void MainWindow::onGetDataButtonClicked()
     ui->progressBar->setValue(100);
     ui->progressBar->setVisible(false);
  }
-
 
 int MainWindow::getClipboardDatas() {
     QStringList texte = clipboard->text().replace(',', '.').split("\n");
@@ -166,7 +162,6 @@ void MainWindow::setPhase2Enabled(bool enabled) {
     ui->calculerButton->setEnabled(false);
 }
 
-
 void MainWindow::afficherTableauDatas()
 {
 
@@ -183,8 +178,6 @@ void MainWindow::afficherTableauDatas()
         }
     }
 }
-
-
 
 void MainWindow::createSplineChart() {
   //  qDebug("Start creating SplineChart");
@@ -236,7 +229,6 @@ void MainWindow::createSplineChart() {
 
 }
 
-
 void MainWindow::on_validerButton_clicked(bool checked) {
     while(tableauGroupes->rowCount() > 0)
         tableauGroupes->removeRow(0);
@@ -249,20 +241,13 @@ void MainWindow::on_validerButton_clicked(bool checked) {
     ui->nbGroupeErrorLabel->setText("");
 
     int defautlGroupeSize = nbSouris / nbGroupes;
-    int nbGrpsPlusGros = nbSouris % nbGroupes;
-    for (int iGrp = 0; iGrp < nbGrpsPlusGros; ++iGrp) {
-        tableauGroupes->insertRow(0);
-        tableauGroupes->setData(tableauGroupes->index(0,0,q), QString("Groupe %1").arg(nbGroupes - iGrp));
-        tableauGroupes->setData(tableauGroupes->index(0,1,q), defautlGroupeSize+1);
-    }
-    for (int iGrp = nbGrpsPlusGros; iGrp < nbGroupes; ++iGrp) {
+    for (int iGrp = 0; iGrp < nbGroupes; ++iGrp) {
         tableauGroupes->insertRow(0);
         tableauGroupes->setData(tableauGroupes->index(0,0,q), QString("Groupe %1").arg(nbGroupes - iGrp));
         tableauGroupes->setData(tableauGroupes->index(0,1,q), defautlGroupeSize);
     }
     ui->TailleGroupesGroupBox->setEnabled(true);
 }
-
 
 void MainWindow::updateGroupes()
 {
@@ -274,10 +259,10 @@ void MainWindow::updateGroupes()
         total += tableauGroupes->data(tableauGroupes->index(iGrp,1,q)).toInt();
     }
     ui->GroupeErrorLabel->setText(QString("Total : %1/%2 souris").arg(total).arg(nbSouris));
-    ui->calculerButton->setEnabled(total==nbSouris);
+    ui->calculerButton->setEnabled(total <= nbSouris);
 }
 
-
+void startGenetique();
 void MainWindow::on_calculerButton_clicked()
 {
     if (calculsEnCours) {
@@ -287,13 +272,17 @@ void MainWindow::on_calculerButton_clicked()
         ui->TailleGroupesGroupBox->setEnabled(true);
         ui->calculerButton->setText("Calculer");
         calculsEnCours = false;
-        stopCalculs();
+        stopGenetique();
     } else {
-        int total = 0;
-        for (int iGrp = 0; iGrp < nbGroupes; ++iGrp) {
-            total += tableauGroupes->data(tableauGroupes->index(iGrp,1,q)).toInt();
+        while (!taillesGroupes.empty()) {
+            taillesGroupes.pop_back();
         }
-        if(total != nbSouris)
+        nbSourisUtilisees = 0;
+        for (int iGrp = 0; iGrp < nbGroupes; ++iGrp) {
+            taillesGroupes.push_back(tableauGroupes->data(tableauGroupes->index(iGrp,1,q)).toInt());
+            nbSourisUtilisees += taillesGroupes.back();
+        }
+        if(nbSourisUtilisees > nbSouris)
             return;
         calculsEnCours = true;
         ui->DonneesGroupBox->setEnabled(false);
@@ -301,7 +290,8 @@ void MainWindow::on_calculerButton_clicked()
         ui->NbGroupesGroupBox->setEnabled(false);
         ui->TailleGroupesGroupBox->setEnabled(false);
         ui->calculerButton->setText("Annuler");
-        lancerCalculs();
+
+
     }
 
 }
@@ -330,19 +320,239 @@ void MainWindow::calculerParametresSerie()
 
 
 
-
-
-void MainWindow::lancerCalculs() {
-    qDebug("On calcule !!!");
-}
-void MainWindow::stopCalculs() {
-    qDebug("On ne calcule plus !!!");
-}
-
-
-
 void MainWindow::on_helpButton_clicked() {
 
     tutorielDialog->show();
 
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+#define TAILLE_POP 100
+#define NB_MAX_SOURIS 300
+#define MAX_NB_GRP 50
+
+struct Groupe {
+    int tailleTotale;
+    double valeurAdditionnelle;
+};
+
+vector<Groupe> groupes;
+vector<double> sourisDispo[2];
+int tailleChromo;
+
+short pop[TAILLE_POP][NB_MAX_SOURIS/2][2];
+double scoreIndiv[TAILLE_POP];
+int iSouris;
+
+struct RandTable {
+    short id;
+    double random;
+    void update(short i) {
+        id = i;
+        random = rand();
+    }
+    bool operator < (RandTable &r) {
+        return  random < r.random;
+    }
+} tablePermutation[NB_MAX_SOURIS / 2];
+
+void startGenetique()
+{
+    qDebug("startGenetique");
+    calculsEnCours = true;
+
+    srand (time(NULL));
+    qDebug("init");
+    init();
+    long long t = time(NULL);
+    int iGeneration = 0;
+    qDebug("Gen %d - Time %d", iGeneration, time(NULL) - t);
+    while (calculsEnCours && iGeneration < 100000) {
+      //  qDebug("evaluation");
+        evaluation();
+    //    qDebug("selection");
+        selection();
+      //  qDebug("croisement");
+        croisement();
+     //  qDebug("mutation");
+        mutation();
+     //   qDebug("Gen %d - Time %d", iGeneration, time(NULL) - t);
+   //     t = time(NULL);
+        iGeneration++;
+    }
+    qDebug("Gen %d - Time %d", iGeneration, time(NULL) - t);
+
+}
+
+void MainWindow::stopGenetique()
+{
+    calculsEnCours = false;
+
+   //TODO
+}
+
+int nbGroupesImpairs,  nbSourisAEcarter;
+int bMin, bMax;
+double newMoy, newVariance;\
+
+
+void MainWindow::init()
+{
+    //init Groupes
+
+    nbGroupesImpairs = 0;
+    for(int t : taillesGroupes) {
+        nbGroupesImpairs += t % 2;
+    }
+
+    nbSourisAEcarter = nbSouris - nbSourisUtilisees;
+    bMin = 0;
+    bMax = taillesGroupes.size() - 1;
+    for (int i = 0; i < nbSourisAEcarter; ++i) {
+        if(abs(mSouris[bMin].taille - moyenne) < abs(mSouris[bMax].taille - moyenne)) {
+            bMax--;
+        } else {
+            bMin++;
+        }
+    }
+
+    newMoy = 0.0;
+    newVariance = 0;
+    for (int iSouris = bMin; iSouris <= bMax; ++iSouris) {
+        newMoy += mSouris[iSouris].tailleOriginale;
+    }
+    newMoy /= bMax - bMin + 1;
+    for (int iSouris = bMin; iSouris <= bMax; ++iSouris) {
+        newVariance += pow(newMoy - mSouris[iSouris].tailleOriginale, 2);
+    }
+    newVariance /= bMax - bMin + 1;
+
+    while (bMax - bMin + 1 > nbGroupesImpairs){
+        sourisDispo[0].push_back(mSouris.at(bMin).tailleOriginale);
+        sourisDispo[1].push_back(mSouris.at(bMax).tailleOriginale);
+        bMin++;
+        bMax--;
+    }
+
+    for(int taille : taillesGroupes) {
+   //     if(taillesGroupes)
+        groupes.push_back({taille, -1});
+    }
+
+    for (int iSouris = bMin; iSouris <= bMax; ++iSouris) {
+        groupes[iSouris - bMin].valeurAdditionnelle = mSouris.at(iSouris).tailleOriginale;
+    }
+
+
+
+    //init population
+
+    tailleChromo = (nbSourisUtilisees - nbGroupesImpairs) / 2;
+
+    for (int iIndiv = 0; iIndiv < TAILLE_POP; ++iIndiv) {
+
+        for (int iSerie = 0; iSerie < 2; ++iSerie) {
+
+            for (short iSouris = 0; iSouris < tailleChromo; ++iSouris) {
+                tablePermutation[iSouris].update(iSouris);
+            }
+
+            sort(tablePermutation, tablePermutation + tailleChromo);
+
+            for (int iSouris = 0; iSouris < tailleChromo; ++iSouris) {
+                pop[iIndiv][iSouris][iSerie] = tablePermutation[iSouris].id;
+            }
+        }
+    }
+}
+
+
+double moyGrp[MAX_NB_GRP], variGrp[MAX_NB_GRP];
+double moyMoy, moyVari;
+int curReadId;
+int startReadId;
+
+
+void MainWindow::evaluation()
+{
+    for (int iIndiv = 0; iIndiv < TAILLE_POP; ++iIndiv) {
+        curReadId = 0;
+        for (int iGroupe = 0; iGroupe < nbGroupes; ++iGroupe) {
+            startReadId = curReadId;
+            curReadId += groupes[iGroupe].tailleTotale / 2;
+            if(groupes[iGroupe].valeurAdditionnelle > 0) {
+                moyGrp[iGroupe] = groupes[iGroupe].valeurAdditionnelle;
+            } else {
+                moyGrp[iGroupe] = 0;
+            }
+            for (iSouris =  startReadId; iSouris < curReadId; ++iSouris) {
+                for (int iSerie = 0; iSerie < 2; ++iSerie) {
+                    moyGrp[iGroupe] += pop[iIndiv][iSouris][iSerie];
+                }
+            }
+            moyGrp[iGroupe] /= groupes[iGroupe].tailleTotale;
+
+            if(groupes[iGroupe].valeurAdditionnelle > 0) {
+                variGrp[iGroupe] = pow(groupes[iGroupe].valeurAdditionnelle-moyGrp[iGroupe], 2);
+            } else {
+                variGrp[iGroupe] = 0;
+            }
+            for (iSouris =  startReadId; iSouris < curReadId; ++iSouris) {
+                for (int iSerie = 0; iSerie < 2; ++iSerie) {
+                    variGrp[iGroupe] += pow(pop[iIndiv][iSouris][iSerie]-moyGrp[iGroupe], 2);;
+                }
+            }
+            variGrp[iGroupe] /= groupes[iGroupe].tailleTotale;
+        }
+        moyMoy = 0;
+        moyVari = 0;
+        for (int iGroupe = 0; iGroupe < nbGroupes; ++iGroupe) {
+            moyMoy = moyGrp[iGroupe];
+            moyVari = variGrp[iGroupe];
+        }
+        moyMoy /= nbGroupes;
+        moyVari /= nbGroupes;
+        for (int iGroupe = 0; iGroupe < nbGroupes; ++iGroupe) {
+            moyMoy = moyGrp[iGroupe];
+            moyVari = variGrp[iGroupe];
+        }
+        scoreIndiv[iIndiv] = 0;
+        for (int iGroupe = 0; iGroupe < nbGroupes; ++iGroupe) {
+            scoreIndiv[iIndiv] += abs(moyMoy - moyGrp[iGroupe]);
+            scoreIndiv[iIndiv] += abs(moyVari - variGrp[iGroupe]);
+        }
+    }
+}
+
+
+
+void MainWindow::selection()
+{
+
+}
+
+void MainWindow::croisement()
+{
+
+}
+
+void MainWindow::mutation()
+{
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
