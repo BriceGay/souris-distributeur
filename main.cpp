@@ -29,7 +29,12 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     MainWindow w;
+//    for (int var = 0; var < 100; ++var) {
+//        qDebug("%d", rand() * 100);
+//    }
+
     w.show();
+
 
     return a.exec();
 }

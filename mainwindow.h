@@ -36,6 +36,7 @@
 #include <vector>
 #include <algorithm>
 #include <math.h>
+#include <QThread>
 
 
 using namespace std;
@@ -68,10 +69,31 @@ struct Souris {
 };
 
 
+struct Groupe {
+    int tailleTotale;
+    double valeurAdditionnelle;
+};
+
+
+
+struct RandTable {
+    short id;
+    int random;
+    void update(short i) {
+        id = i;
+        random = rand();
+    }
+    bool operator < (RandTable &r) {
+        return  random < r.random;
+    }
+};
+
+
 
 namespace Ui {
 class MainWindow;
 }
+
 
 class MainWindow : public QMainWindow
 {
@@ -82,26 +104,25 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    DataTable generateRandomData(int listCount, int valueMax, int valueCount) const;
 
 public slots:
     void onGetDataButtonClicked();
 
-
-private slots:
     void on_validerButton_clicked(bool checked);
     void updateGroupes();
-
+    void updateProgressBar();
     void on_calculerButton_clicked();
 
     void on_helpButton_clicked();
 
-private:
+public:
     void createSplineChart();
     void afficherTableauDatas();
     int getClipboardDatas();
     void setPhase2Enabled(bool enabled);
     void calculerParametresSerie();
+
+
 
 
     void startGenetique();
@@ -137,8 +158,69 @@ public:
     Ui::MainWindow *ui;
 
 
+
+
+    #define NB_MAX_SOURIS 300
+    #define MAX_NB_GRP 50
+    #define TAILLE_POP 100
+    #define PRESSIONS_SELECTION 70
+    #define NB_INDIVIDUS_PARENTS 30
+    #define MAX_NB_GENERATION 10000
+    #define PROBA_MUTATION 1
+    #define DIVISEUR_POURCENTAGES 100
+
+    int nbGroupesImpairs,  nbSourisAEcarter;
+    int bMin, bMax;
+    double newMoy, newVariance;
+
+
+    bool iGen = 0;
+
+    vector<Groupe> groupes;
+    vector<double> sourisDispo[2];
+    int tailleChromo;
+
+    short pop[2][TAILLE_POP][NB_MAX_SOURIS/2][2];
+    long double scoreIndiv[TAILLE_POP];
+    int iSouris;
+
+    short curTest = 0;
+    short nbDejaVu[NB_MAX_SOURIS/2];
+    RandTable tablePermutation[NB_MAX_SOURIS / 2];
+
+
+
+    double moyGrp[MAX_NB_GRP], variGrp[MAX_NB_GRP];
+    double moyMoy, moyVari;
+    int curReadId;
+    int startReadId;
+    double bestScore;
+    int idBestScore;
+
+
+    int iConcurrent[2];
+    bool iSelec;
+
+
+    int iParents[2];
+    int iCoupure;
+    int iSouris2;
+    int i1, i2, iChromo, swapNb;
+
 };
 
 ;
+
+
+class ThreadCalculer : public QThread {
+    public:
+        MainWindow * mW;
+        void setup(MainWindow * mainW) {
+            mW = mainW;
+        }
+        void run() {
+            mW->startGenetique();
+        }
+};
 
 #endif // MAINWINDOW_H
