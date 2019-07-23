@@ -24,6 +24,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "gestiondata.h"
+
 #include <QMainWindow>
 #include <QtWidgets/QWidget>
 #include <QtCharts/QChartGlobal>
@@ -59,36 +61,6 @@ typedef QList<DataList> DataTable;
 
 QT_CHARTS_USE_NAMESPACE
 
-struct Souris {
-    QString name;
-    double tailleOriginale;
-    int taille;
-    bool operator < (Souris & s) {
-        return taille < s.taille;
-    }
-};
-
-
-struct Groupe {
-    int tailleTotale;
-    double valeurAdditionnelle;
-};
-
-
-
-struct RandTable {
-    short id;
-    int random;
-    void update(short i) {
-        id = i;
-        random = rand();
-    }
-    bool operator < (RandTable &r) {
-        return  random < r.random;
-    }
-};
-
-
 
 namespace Ui {
 class MainWindow;
@@ -99,128 +71,37 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
-
-
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
 public slots:
     void onGetDataButtonClicked();
-
     void on_validerButton_clicked(bool checked);
-    void updateGroupes();
-    void updateProgressBar();
     void on_calculerButton_clicked();
-
     void on_helpButton_clicked();
+
+    void updateTimer();
 
 public:
     void createSplineChart();
     void afficherTableauDatas();
-    int getClipboardDatas();
-    void setPhase2Enabled(bool enabled);
-    void calculerParametresSerie();
+    void setPhaseCreationGroupeEnabled(bool enabled);
 
+    void closeEvent(QCloseEvent *event);
 
+    gestionData GD;
 
-
-    void startGenetique();
-    void stopGenetique();
-    void init();
-    void evaluation();
-    void selection();
-    void croisement();
-    void mutation();
-
-public:
-    //souris
-    int nbSouris;
-    vector<Souris> mSouris;
-    double coefMultiplicateurDouble = 1000;
-    int maxTaille = -1;
-    int nbGroupes;
-    double moyenne;
-    double variance;
-    double medianne;
-    int nbSourisUtilisees;
-    vector<int> taillesGroupes;
-
-    bool calculsEnCours = false;
-
-    int m_valueMax;
-    int m_valueCount;
-    QList<QChartView *> m_charts;
-    DataTable m_dataTable;
-
-    // elements graphiques
     QChartView *chartView;
     Ui::MainWindow *ui;
 
+    bool calculsEnCours = false;
 
 
-
-    #define NB_MAX_SOURIS 300
-    #define MAX_NB_GRP 50
-    #define TAILLE_POP 100
-    #define PRESSIONS_SELECTION 70
-    #define NB_INDIVIDUS_PARENTS 30
-    #define MAX_NB_GENERATION 10000
-    #define PROBA_MUTATION 1
-    #define DIVISEUR_POURCENTAGES 100
-
-    int nbGroupesImpairs,  nbSourisAEcarter;
-    int bMin, bMax;
-    double newMoy, newVariance;
-
-
-    bool iGen = 0;
-
-    vector<Groupe> groupes;
-    vector<double> sourisDispo[2];
-    int tailleChromo;
-
-    short pop[2][TAILLE_POP][NB_MAX_SOURIS/2][2];
-    long double scoreIndiv[TAILLE_POP];
-    int iSouris;
-
-    short curTest = 0;
-    short nbDejaVu[NB_MAX_SOURIS/2];
-    RandTable tablePermutation[NB_MAX_SOURIS / 2];
-
-
-
-    double moyGrp[MAX_NB_GRP], variGrp[MAX_NB_GRP];
-    double moyMoy, moyVari;
-    int curReadId;
-    int startReadId;
-    double bestScore;
-    int idBestScore;
-
-
-    int iConcurrent[2];
-    bool iSelec;
-
-
-    int iParents[2];
-    int iCoupure;
-    int iSouris2;
-    int i1, i2, iChromo, swapNb;
 
 };
 
-;
 
 
-class ThreadCalculer : public QThread {
-    public:
-        MainWindow * mW;
-        void setup(MainWindow * mainW) {
-            mW = mainW;
-        }
-        void run() {
-            mW->startGenetique();
-        }
-};
 
 #endif // MAINWINDOW_H

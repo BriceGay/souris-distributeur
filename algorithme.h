@@ -20,19 +20,32 @@
 //-------------------------------------------------
 
 
-#include <QApplication>
-#include <ui_tutoriel.h>
-#include "mainwindow.h"
+#ifndef ALGORITHME_H
+#define ALGORITHME_H
+
 #include "generalinclude.h"
 
-
-int main(int argc, char *argv[])
+class algorithmeTraitement
 {
-    QApplication a(argc, argv);
-    MainWindow w;
+public:
+    algorithmeTraitement(int * refProgression);
+    void startGenetique();
+    void stopGenetique();
+    void setData(vector<Souris> * listeSouris, vector<int> * listeGroupes);
+private:
+    void init();
+    void evaluation();
+    void selection();
+    void croisement();
+    void mutation();
+    void restartVariablesLocales();
 
-    w.show();
+    bool stopThread;
+    vector<Souris> mSouris;
+    vector<int> tailleGroupes;
+    int * threadProgression;
+};
 
 
-    return a.exec();
-}
+
+#endif // ALGORITHME_H

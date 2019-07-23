@@ -20,19 +20,58 @@
 //-------------------------------------------------
 
 
-#include <QApplication>
-#include <ui_tutoriel.h>
-#include "mainwindow.h"
+
+
+#ifndef GESTIONDATA_H
+#define GESTIONDATA_H
+
+#include "algorithme.h"
 #include "generalinclude.h"
 
+#include <qthread.h>
 
-int main(int argc, char *argv[])
+class ThreadCalculer : public QThread {
+public:
+    algorithmeTraitement * at;
+    void setup(algorithmeTraitement * algT) {
+        at = algT;
+    }
+    void run() {
+        at->startGenetique();
+    }
+};
+
+
+
+
+
+
+class gestionData
 {
-    QApplication a(argc, argv);
-    MainWindow w;
+public:
+    ThreadCalculer threadCalculer;
+    gestionData(int *progressThread);
 
-    w.show();
+    QString getClipboardDatas();
+    void calculerParametresSerie();
+
+    algorithmeTraitement AT;
 
 
-    return a.exec();
-}
+    vector<Souris> mSouris;
+    int nbSouris;
+    double maxTaille = -1;
+    int nbGroupes;
+    double moyenne;
+    double variance;
+    double medianne;
+    int nbSourisUtilisees;
+    vector<int> taillesGroupes;
+
+
+
+    bool startCalculs();
+    bool stopCalculs();
+};
+
+#endif // GESTIONDATA_H

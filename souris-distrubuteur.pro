@@ -45,10 +45,15 @@ CONFIG += c++11
 
 SOURCES += \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+    algorithme.cpp \
+    gestiondata.cpp
 
 HEADERS += \
-        mainwindow.h
+        mainwindow.h \
+    algorithme.h \
+    gestiondata.h \
+    generalinclude.h
 
 FORMS += \
         mainwindow.ui \
