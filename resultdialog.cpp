@@ -45,6 +45,7 @@ ResultDialog::ResultDialog(QWidget *parent, algorithmeTraitement * algo) :
         maxMoy = max(maxMoy, moyennes.back());
         minEcType = min(minEcType, ecType.back());
         maxEcType = max(maxEcType, ecType.back());
+        result.append(QString("MOY\t%1\nET\t%2\n\n").arg(moyennes.back()).arg(ecType.back()));
     }
 
     qDebug() << "minMoy=" << minMoy << "\nmaxMoy=" << maxMoy << "\nminEcType=" << minEcType << "\nmaxEcType=" << maxEcType;
