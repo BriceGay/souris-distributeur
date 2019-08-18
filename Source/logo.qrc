@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>logoVert.png</file>
+        <file>logo100.png</file>
+        <file>screenTableur.png</file>
+    </qresource>
+</RCC>
