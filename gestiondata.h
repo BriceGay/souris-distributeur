@@ -27,6 +27,7 @@
 
 #include "algorithme.h"
 #include "generalinclude.h"
+#include <qclipboard.h>
 
 #include <qthread.h>
 
@@ -72,6 +73,8 @@ public:
 
     bool startCalculs();
     bool stopCalculs();
+
+    QClipboard *clipboard;
 };
 
 #endif // GESTIONDATA_H

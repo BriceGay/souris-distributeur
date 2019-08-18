@@ -7,14 +7,18 @@
 #include <vector>
 #include <QString>
 
+
 using namespace std;
 
 struct Souris {
    QString name;
+   int id;
    double taille;
    bool operator < (Souris & s) {//ça va faire des bugs ça non ?
        return taille < s.taille;
    }
 };
+
+
 
 #endif // GENERALINCLUDE_H

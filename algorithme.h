@@ -32,6 +32,8 @@ public:
     void startGenetique();
     void stopGenetique();
     void setData(vector<Souris> * listeSouris, vector<int> * listeGroupes);
+    vector<Souris> * sendResult();
+    vector<int> * sendConsigne();
 private:
     void init();
     void evaluation();
@@ -44,6 +46,7 @@ private:
     vector<Souris> mSouris;
     vector<int> tailleGroupes;
     int * threadProgression;
+
 };
 
 

@@ -46,7 +46,7 @@ struct RandTable {
 #define TAILLE_POP 100
 #define PRESSIONS_SELECTION 70
 #define NB_INDIVIDUS_PARENTS 30
-#define MAX_NB_GENERATION 100000000
+#define MAX_NB_GENERATION 100000
 #define PROBA_MUTATION 1
 #define DIVISEUR_POURCENTAGES 100
 
@@ -88,6 +88,15 @@ int iCoupure;
 int iSouris2;
 int i1, i2, iChromo, swapNb;
 
+vector<Souris> * algorithmeTraitement::sendResult() {
+    return &mSouris;
+}
+
+vector<int> *algorithmeTraitement::sendConsigne()
+{
+    return &tailleGroupes;
+}
+
 
 double bestBestScore = 1000000;
 
@@ -109,8 +118,8 @@ void algorithmeTraitement::startGenetique()
     long long t = time(NULL);
     int iGeneration = 0;
     while (!stopThread && iGeneration < MAX_NB_GENERATION) {
-        qDebug("Gen %d - Time %d", iGeneration, time(NULL) - t);
-        *threadProgression = iGeneration * 100 / MAX_NB_GENERATION;
+ //       qDebug("Gen %d - Time %d", iGeneration, time(NULL) - t);
+        *threadProgression = iGeneration * 99 / MAX_NB_GENERATION;
 //        evaluation();
 //        selection();
 //        iGen = !iGen;

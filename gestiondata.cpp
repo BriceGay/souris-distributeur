@@ -20,19 +20,18 @@
 //-------------------------------------------------
 
 
-#include <qclipboard.h>
-#include <qapplication.h>
 #include <math.h>
-
 #include "gestiondata.h"
+#include <qapplication.h>
 
 gestionData::gestionData(int * progressThread) : AT(progressThread) {
     threadCalculer.setup(&AT);
+    clipboard = QApplication::clipboard();
 }
 
-QClipboard *clipboard = QApplication::clipboard();
 
 QString gestionData::getClipboardDatas() {
+
 
     QStringList texte = clipboard->text().replace(',', '.').split("\n");
 
@@ -46,12 +45,14 @@ QString gestionData::getClipboardDatas() {
     maxTaille = 0;
 
     // lecture du clipboard et creation du tableau
+    int id = 0;
     for (QString ligne : texte) {
         item = ligne.split("\t");
         if(item.length() == 2) {
             value = item[1].toDouble(&isDouble);
             if (isDouble && value >= 0) {//TODO Nombres positifs uniquement ?
-                mSouris.push_back({item[0], value});
+                mSouris.push_back({item[0], id, value});
+                id++;
                 maxTaille = std::max(maxTaille, value);
             } else {
                 errorNumber++;
@@ -103,6 +104,7 @@ void gestionData::calculerParametresSerie()
 }
 
 bool gestionData::startCalculs() {
+    AT.setData(&mSouris, &taillesGroupes);
     threadCalculer.start(QThread::TimeCriticalPriority);
 }
 

@@ -47,17 +47,20 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     algorithme.cpp \
-    gestiondata.cpp
+    gestiondata.cpp \
+    resultdialog.cpp
 
 HEADERS += \
         mainwindow.h \
     algorithme.h \
     gestiondata.h \
-    generalinclude.h
+    generalinclude.h \
+    resultdialog.h
 
 FORMS += \
         mainwindow.ui \
-        tutoriel.ui
+        tutoriel.ui \
+    resultdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

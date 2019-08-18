@@ -83,6 +83,8 @@ public slots:
 
     void updateTimer();
 
+    void onProgressBarChanged();
+
 public:
     void createSplineChart();
     void afficherTableauDatas();
@@ -99,6 +101,7 @@ public:
 
 
 
+    void setWindowEnabled(bool e);
 };
 
 

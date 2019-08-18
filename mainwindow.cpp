@@ -25,7 +25,6 @@
 #include <ui_tutoriel.h>
 #include <thread>
 
-#include <QtCore/QRandomGenerator>
 #include <QTimer>
 #include <qdialog.h>
 
@@ -34,6 +33,7 @@
 
 #include "generalinclude.h"
 
+#include "resultdialog.h"
 
 
 
@@ -76,6 +76,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     timer->start(300);
 
     connect(ui->getDataButton, SIGNAL(clicked(bool)), this, SLOT(onGetDataButtonClicked()));
+
+    connect(ui->progressBar, SIGNAL(valueChanged(int)), this, SLOT(onProgressBarChanged()));
+
+
     tutorielDialog = new QDialog;
     Ui::Dialog ui;
     ui.setupUi(tutorielDialog);
@@ -90,7 +94,7 @@ MainWindow::~MainWindow()
 void MainWindow::closeEvent(QCloseEvent *event)  // show prompt when user wants to close app
 {
     event->ignore();
-    if (!calculsEnCours || QMessageBox::Yes == QMessageBox::question(this,  "Fermer ?", "Confirmer l'abandon des calculs en cours ?", QMessageBox::Yes | QMessageBox::Cancel))
+    if (!calculsEnCours || QMessageBox::Yes == QMessageBox::question(this,  "Fermer ?", "Stoper les calculs et quitter ?", QMessageBox::Yes | QMessageBox::Cancel))
     {
         event->accept();
     }
@@ -247,20 +251,18 @@ void MainWindow::updateTimer()
 
 }
 
-
 void MainWindow::on_calculerButton_clicked()
 {
     ui->calculerButton->setEnabled(false);
 
     if (calculsEnCours) {
-        ui->DonneesGroupBox->setEnabled(true);
-        ui->VisualisationGroupBox->setEnabled(true);
-        ui->NbGroupesGroupBox->setEnabled(true);
-        ui->TailleGroupesGroupBox->setEnabled(true);
-        ui->calculerButton->setText("Calculer");
-        GD.stopCalculs();
-        calculsEnCours = false;
-        ui->progressBar->setVisible(false);
+        if(QMessageBox::Yes == QMessageBox::question(this,  "Confirmation", "Abandonner le calcul en cours ?", QMessageBox::Yes | QMessageBox::Cancel)) {
+            setWindowEnabled(true);
+            GD.stopCalculs();
+            calculsEnCours = false;
+        }
+
+
     } else {
         while (!GD.taillesGroupes.empty()) {
             GD.taillesGroupes.pop_back();
@@ -273,20 +275,35 @@ void MainWindow::on_calculerButton_clicked()
         if(GD.nbSourisUtilisees > GD.nbSouris)
             return;
         calculsEnCours = true;
-
-        ui->DonneesGroupBox->setEnabled(false);
-        ui->VisualisationGroupBox->setEnabled(false);
-        ui->NbGroupesGroupBox->setEnabled(false);
-        ui->TailleGroupesGroupBox->setEnabled(false);
-
-        ui->calculerButton->setText("Annuler");
-        ui->progressBar->setValue(0);
-        ui->progressBar->setVisible(true);
-
-
+        setWindowEnabled(false);
         GD.startCalculs();
     }
 
     ui->calculerButton->setEnabled(true);
 }
 
+void MainWindow::setWindowEnabled(bool e) {
+    ui->DonneesGroupBox->setEnabled(e);
+    ui->VisualisationGroupBox->setEnabled(e);
+    ui->NbGroupesGroupBox->setEnabled(e);
+    ui->TailleGroupesGroupBox->setEnabled(e);
+    ui->progressBar->setVisible(!e);
+    ui->progressBar->setValue(0);
+
+    if (e) {
+        ui->calculerButton->setText("Calculer");
+    } else {
+        ui->calculerButton->setText("Annuler");
+    }
+}
+
+void MainWindow::onProgressBarChanged()
+{
+    if(calculsEnCours && ui->progressBar->value() == 100) {
+        calculsEnCours = false;
+        qDebug("BIIIP");
+        setWindowEnabled(true);
+        ResultDialog r(this, &(GD.AT) );
+        r.exec();
+    }
+}
