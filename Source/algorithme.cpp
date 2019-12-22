@@ -25,10 +25,41 @@
 
 
 vector<Souris> * algorithmeTraitement::sendResult() {
-    return &mSouris;
+    result.clear();
+    int curReadId = 0;
+    curTest++;
+    for(int iGrp = 0; iGrp < groupes.size() - 1; iGrp++) {
+
+        if(groupes[iGrp].taille % 2 == 1) {
+            result.push_back(mSouris[groupes[iGrp].valAddiId]);
+        }
+        for (iSouris = 0; iSouris < groupes[iGrp].taille / 2; ++iSouris) {
+            for (int iSerie = 0; iSerie < 2; ++iSerie) {
+                result.push_back(mSouris.at( sourisDispoId[iSerie][ memoryBestBestScore[iSerie][curReadId] ] ) );
+                nbDejaVu[iSerie][ memoryBestBestScore[iSerie][curReadId] ] = curTest + iSerie;
+
+            }
+            curReadId++;
+        }
+    }
+    if(groupes.back().taille % 2 == 1) {
+        result.push_back(mSouris[groupes.back().valAddiId]);
+    }
+    for (int iSerie = 0; iSerie < 2; ++iSerie) {
+        for (iSouris = 0; iSouris < tailleChromoAvecDernier; ++iSouris) {
+            if (nbDejaVu[iSerie][iSouris] != curTest + iSerie) {
+                result.push_back(mSouris.at( sourisDispoId[iSerie][iSouris] ) );
+                nbDejaVu[iSerie][iSouris] = curTest + iSerie;
+            }
+        }
+    }
+    curTest += 2;
+    return &result;
+
 }
 
-vector<unsigned int> *algorithmeTraitement::sendConsigne()
+
+vector<int> *algorithmeTraitement::sendConsigne()
 {
     return &taillesGroupes;
 }
@@ -42,10 +73,11 @@ algorithmeTraitement::algorithmeTraitement(int *refProgression)
 void algorithmeTraitement::startGenetique()
 {
     stopThread = false;
-    qDebug("startGenetique");
-    bestBestScore = 1000*1000.0;
+//    qDebug("startGenetique");
 
-   *threadProgression = 0;
+    restartVariablesLocales();
+
+    *threadProgression = 0;
 
     srand (time(NULL));
 
@@ -53,7 +85,7 @@ void algorithmeTraitement::startGenetique()
     long long t = time(NULL);
     int iGeneration = 0;
     while (!stopThread && iGeneration < MAX_NB_GENERATION) {
-        qDebug("Gen %d - Time %d", iGeneration, time(NULL) - t);
+        qDebug("Gen %d - Time %d - Best %d - BestBest %d", iGeneration, time(NULL) - t, bestScore, bestBestScore);
         *threadProgression = iGeneration * 99 / MAX_NB_GENERATION;
         evaluation();
         selection();
@@ -65,8 +97,7 @@ void algorithmeTraitement::startGenetique()
     }
     *threadProgression = 100;
 
-    qDebug("Gen %d - Time %d", iGeneration, time(NULL) - t);
-    qDebug() << "Best=" << bestBestScore;
+    qDebug("Gen %d - Time %d - Best %d - BestBest %d", iGeneration, time(NULL) - t, bestScore, bestBestScore);
 }
 
 void algorithmeTraitement::stopGenetique()
@@ -86,7 +117,7 @@ void algorithmeTraitement::setData(vector<Souris> *listeSouris, vector<int>* lis
 
 void algorithmeTraitement::init()
 {
-  //  qDebug("init");
+    qDebug("init");
 
     //tri des tailles de grp par ordre croissant
     sort(taillesGroupes.begin(), taillesGroupes.end());
@@ -96,18 +127,18 @@ void algorithmeTraitement::init()
     for (Souris s : mSouris) {
         globMoy += s.taille;
     }
-    globMoy /= static_cast<double>(mSouris.size());
+    globMoy /= static_cast<long double>(mSouris.size());
 
     //definition de nbSourisUtilisees
     nbSourisUtilisees = 0;
-    for(unsigned int t : taillesGroupes)
+    for(int t : taillesGroupes)
         nbSourisUtilisees += t;
 
     //elimination des souris en trop
     nbSourisAEcarter = mSouris.size() - nbSourisUtilisees;
     bMin = 0;
     bMax = mSouris.size() - 1;
-    for (unsigned int i = 0; i < nbSourisAEcarter; ++i) {
+    for (int i = 0; i < nbSourisAEcarter; ++i) {
         if(abs(mSouris[bMin].taille - globMoy) < abs(mSouris[bMax].taille - globMoy)) {
             bMax--;
         } else {
@@ -117,7 +148,7 @@ void algorithmeTraitement::init()
 
     //comptage grp impaires
     nbGroupesImpairs = 0;
-    for(unsigned int t : taillesGroupes) {
+    for(int t : taillesGroupes) {
         nbGroupesImpairs += t % 2;
     }
 
@@ -128,48 +159,51 @@ void algorithmeTraitement::init()
         globMoy += mSouris[iSouris].taille;
         globMoyC += pow(mSouris[iSouris].taille, 2);
     }
-    globMoy /= static_cast<double>(nbSourisUtilisees);
-    globMoyC /= static_cast<double>(nbSourisUtilisees);
+    globMoy /= static_cast<long double>(nbSourisUtilisees);
+    globMoyC /= static_cast<long double>(nbSourisUtilisees);
 
 
     //separation en 2 grp autour de la medianne
     while (bMax - bMin + 1 > nbGroupesImpairs) {
         sourisDispo[0].push_back(mSouris[bMin].taille);
+        sourisDispoId[0].push_back(bMin);
         sourisDispo[1].push_back(mSouris[bMax].taille);
+        sourisDispoId[1].push_back(bMax);
         bMin++;
         bMax--;
     }
 
     //creation des groupes
-    for(unsigned int taille : taillesGroupes) {
-        groupes.push_back({taille, 0});
+    for(int taille : taillesGroupes) {
+        groupes.push_back({taille, 0, 0});
         if(taille % 2 == 1) {
             groupes.back().valAddi = mSouris[bMin].taille;
+            groupes.back().valAddiId = bMin;
             bMin++;
         }
     }
 
 
     //init population =
-    tailleChromoTheorique = sourisDispo[0].size();
-    tailleChromoReel = tailleChromoTheorique - (taillesGroupes.back() / 2); // car arondi inferieur sur la division
+    tailleChromoAvecDernier = sourisDispo[0].size();
+    tailleChromoSansDernier = tailleChromoAvecDernier - (taillesGroupes.back() / 2); // car arondi inferieur sur la division
 
     for (int iIndiv = 0; iIndiv < TAILLE_POP; ++iIndiv) {
         for (int iSerie = 0; iSerie < 2; ++iSerie) {
 
-            for (iSouris = 0; iSouris < tailleChromoTheorique; ++iSouris) {
+            for (iSouris = 0; iSouris < tailleChromoAvecDernier; ++iSouris) {
                 tablePermutation[iSouris].update(iSouris);
             }
 
-            sort(tablePermutation, tablePermutation + tailleChromoTheorique);
+            sort(tablePermutation, tablePermutation + tailleChromoAvecDernier);
 
-            for (iSouris = 0; iSouris < tailleChromoReel; ++iSouris) {
+            for (iSouris = 0; iSouris < tailleChromoSansDernier; ++iSouris) {
                 pop[iGen][iIndiv][iSerie][iSouris] = tablePermutation[iSouris].id;
             }
         }
     }
     for (int iSerie = 0; iSerie < 2; ++iSerie) {
-        for (unsigned int i = 0; i < tailleChromoReel; ++i) {
+        for (int i = 0; i < tailleChromoSansDernier; ++i) {
             nbDejaVu[iSerie][i] = curTest;// pas besoin de reinitialiser
         }
     }
@@ -179,11 +213,21 @@ void algorithmeTraitement::init()
 
 void algorithmeTraitement::evaluation()
 {
-    //qDebug("evaluation");
+//    qDebug("evaluation");
 
-    bestScore = 1000*1000;
-
+    bestScore = 1000*1000*1000;
+//    qDebug("%llf", bestScore);
+    idBestScore = 0;
     for (int iIndiv = 0; iIndiv < TAILLE_POP; ++iIndiv) {
+//        qDebug() << "Evaluate indiv " << iIndiv << " from Gen " << iGen << "\n";
+//        for (int iSerie = 0; iSerie < 2; ++iSerie) {
+//            for (iSouris = 0; iSouris < 11; ++iSouris) {
+//                qDebug() << pop[iGen][iIndiv][iSerie][iSouris] << " ";
+//            }
+//            qDebug() << "---";
+//        }
+//        qDebug() << "\n";
+
         curReadId = 0;
         curTest++;
 
@@ -208,7 +252,7 @@ void algorithmeTraitement::evaluation()
         moyGrp[lastGrpId] = groupes[lastGrpId].valAddi;
         moyGrpC[lastGrpId] = pow(groupes[lastGrpId].valAddi, 2);
         for (int iSerie = 0; iSerie < 2; ++iSerie) {
-            for (iSouris = 0; iSouris < tailleChromoReel; ++iSouris) {
+            for (iSouris = 0; iSouris < tailleChromoSansDernier; ++iSouris) {
                 if(nbDejaVu[iSerie][iSouris] != curTest) {
                     nbDejaVu[iSerie][iSouris] = curTest; // pour eviter les bug
                     moyGrp[lastGrpId] += sourisDispo[iSerie][iSouris];
@@ -229,34 +273,37 @@ void algorithmeTraitement::evaluation()
         }
     }
 
-    bestBestScore = min(bestScore, bestBestScore);
-    qDebug("bestScore=%lf", bestScore);
+    if (bestScore < bestBestScore) {
+        bestBestScore = bestScore;
+        idBestBestScore = idBestScore;
+        for (int iSerie = 0; iSerie < 2; ++iSerie) {
+            memoryBestBestScore[iSerie].clear();
+            for (iSouris = 0; iSouris < tailleChromoSansDernier; ++iSouris) {
+                memoryBestBestScore[iSerie].push_back(pop[iGen][idBestScore][iSerie][iSouris]);
+            }
+        }
+    }
+//    qDebug("bestScore=%d", bestScore);
+//    qDebug("   bestBestScore=%d\n", bestBestScore);
 
-    double tot;
-    tot = 0;
-    for (int var = 0; var < 5; ++var) {
-        qDebug() << sourisDispo[0].at(pop[iGen][idBestScore][0][var]);
-        tot += sourisDispo[0].at(pop[iGen][idBestScore][0][var]);
-        qDebug() << sourisDispo[1].at(pop[iGen][idBestScore][1][var]);
-        tot += sourisDispo[1].at(pop[iGen][idBestScore][1][var]);
-    }
-    qDebug() << "(" << tot << ")";
-    qDebug() << " --- ";
-    tot = 0;
-    for (int var = 5; var < 10; ++var) {
-        qDebug() << sourisDispo[0].at(pop[iGen][idBestScore][0][var]);
-        tot += sourisDispo[0].at(pop[iGen][idBestScore][0][var]);
-        qDebug() << sourisDispo[1].at(pop[iGen][idBestScore][1][var]);
-        tot += sourisDispo[1].at(pop[iGen][idBestScore][1][var]);
-    }
-    qDebug() << "(" << tot << ")";
+//    long double tot;
+//    tot = 0;
+//    for (int var = 0; var < tailleChromoSansDernier; ++var) {
+
+//        qDebug() << sourisDispo[0].at(pop[iGen][idBestScore][0][var]);
+//        tot += sourisDispo[0].at(pop[iGen][idBestScore][0][var]);
+//        qDebug() << sourisDispo[1].at(pop[iGen][idBestScore][1][var]);
+//        tot += sourisDispo[1].at(pop[iGen][idBestScore][1][var]);
+//    }
+//    qDebug() << "(" << (double)tot << ")";
+//    qDebug() << " --- ";
 
 }
 
 
 void algorithmeTraitement::selection() {
 
-  //  qDebug("selection");
+//    qDebug("selection");
 
     for (int iIndiv = 0; iIndiv < NB_INDIVIDUS_PARENTS; ++iIndiv) {
         iConcurrent[0] = rand() % TAILLE_POP; //TODO une methode qui fait passer un duel à tous les individus ?
@@ -265,7 +312,7 @@ void algorithmeTraitement::selection() {
 
         //copie de l'individu selectionne vers la generation suivante
         for (int i = 0; i < 2; ++i) {
-            for (int iSouris = 0; iSouris < tailleChromoTheorique; ++iSouris) {
+            for (int iSouris = 0; iSouris < tailleChromoAvecDernier; ++iSouris) {
                 pop[!iGen][iIndiv][i][iSouris] = pop[iGen][iConcurrent[iSelec]][i][iSouris];
             }
         }
@@ -275,42 +322,61 @@ void algorithmeTraitement::selection() {
 
 void algorithmeTraitement::croisement()
 {
-   // qDebug("croisement");
+//    qDebug("croisement");
 
-    for (int iIndiv = NB_INDIVIDUS_PARENTS; iIndiv < TAILLE_POP; iIndiv += 2) {
+    for (int iIndiv = NB_INDIVIDUS_PARENTS; iIndiv < TAILLE_POP; iIndiv ++) {
         iParents[0] = rand() % NB_INDIVIDUS_PARENTS;
         iParents[1] = rand() % NB_INDIVIDUS_PARENTS;
 
-        iCoupure = rand() % tailleChromo;
+        iCoupure = rand() % (tailleChromoSansDernier + 1);
         for (int iChrom = 0; iChrom < 2; ++iChrom) {
 
             curTest++;
             for (int iSouris = 0; iSouris < iCoupure; ++iSouris) {
-                Pop[iGen][iIndiv][iSouris][iChrom] = Pop[iGen][iParents[0]][iSouris][iChrom];
-                nbDejaVu[Pop[iGen][iIndiv][iSouris][iChrom]] = curTest;
+                pop[iGen][iIndiv][iChrom][iSouris] = pop[iGen][ iParents[0] ][iChrom][iSouris];
+                nbDejaVu[iChrom][ pop[iGen][iIndiv][iChrom][iSouris] ] = curTest;
             }
-            for (int iSouris = iCoupure; iSouris < tailleChromo; ++iSouris) {
-                if (nbDejaVu[Pop[iGen][iParents[1]][iSouris][iChrom]] == curTest) {
-                    Pop[iGen][iIndiv][iSouris][iChrom] = Pop[iGen][iParents[1]][iSouris][iChrom];
-                    nbDejaVu[Pop[iGen][iIndiv][iSouris][iChrom]] = curTest;
+            for (int iSouris = iCoupure; iSouris < tailleChromoSansDernier; ++iSouris) {
+                if (nbDejaVu[iChrom][ pop[iGen][ iParents[1] ][iChrom][iSouris] ] != curTest) {
+                    pop[iGen][iIndiv][iChrom][iSouris] = pop[iGen][iParents[1]][iChrom][iSouris];
+                    nbDejaVu[iChrom][ pop[iGen][iIndiv][iChrom][iSouris] ] = curTest;
                 } else {
-                    Pop[iGen][iIndiv][iSouris][iChrom] = -1;
+                    pop[iGen][iIndiv][iChrom][iSouris] = -1;//WARNING negatif dans short
                 }
             }
-            iSouris = -1;
-            iSouris2 = -1;
-            while(iSouris < tailleChromo) {
-                do {
-                    iSouris++;
-                } while(iSouris < tailleChromo && Pop[iGen][iIndiv][iSouris][iChrom] != -1);
-                if(iSouris < tailleChromo) {
-                    do {
-                        iSouris2++;
-                    } while(nbDejaVu[Pop[iGen][iParents[1]][iSouris2][iChrom]] == curTest);
-                    Pop[iGen][iIndiv][iSouris][iChrom] = Pop[iGen][iParents[1]][iSouris2][iChrom];
+
+            pas = (rand() % 2 - 1) * 2 + 1; // pas = +1 ou -1
+            iSouris2 = rand() % tailleChromoAvecDernier;
+
+            for (int iSouris = 0; iSouris < tailleChromoSansDernier; ++iSouris) {
+                if(pop[iGen][iIndiv][iChrom][iSouris] == -1) {
+
+                    while (nbDejaVu[iChrom][iSouris2] == curTest) {
+                        iSouris2 += pas;
+                        if(iSouris2 == -1)
+                            iSouris2 = tailleChromoAvecDernier - 1;
+                        else if(iSouris2 == tailleChromoAvecDernier)
+                            iSouris2 = 0;
+                    }
+                    nbDejaVu[iChrom][iSouris2] = curTest;
+                    pop[iGen][iIndiv][iChrom][iSouris] = iSouris2;
+
                 }
             }
+
+
+
         }
+//        qDebug() << "After Croisement of " << iIndiv << " from Gen " << iGen << "\n";
+//        for (int iSerie = 0; iSerie < 2; ++iSerie) {
+//            for (iSouris = 0; iSouris < 5; ++iSouris) {
+//                qDebug() << pop[iGen][iIndiv][iSerie][iSouris] << " ";
+//                if(pop[iGen][iIndiv][iSerie][iSouris] == -1)
+//                    qErrnoWarning("ERROR");
+//            }
+//            qDebug() << "---";
+//        }
+//        qDebug() << "\n";
 
 
 //        swapNb = iParents[0];
@@ -323,16 +389,20 @@ void algorithmeTraitement::croisement()
 void algorithmeTraitement::mutation()
 {
 
-  //  qDebug("mutation");
+//    qDebug("mutation");
 
     for (int iIndiv = 0; iIndiv < TAILLE_POP; ++iIndiv) {
         if(rand() % DIVISEUR_POURCENTAGES < PROBA_MUTATION) {
-            i1 = rand() % tailleChromo;
-            i2 = rand() % tailleChromo;
+            i1 = rand() % tailleChromoAvecDernier;
+            i2 = rand() % tailleChromoAvecDernier;
             iChromo = rand() % 2;
-            swapNb = Pop[iGen][iIndiv][i1][iChromo];
-            Pop[iGen][iIndiv][i1][iChromo] = Pop[iGen][iIndiv][i2][iChromo];
-            Pop[iGen][iIndiv][i2][iChromo] = swapNb;
+            for (iSouris = 0; iSouris < tailleChromoSansDernier; ++iSouris) {
+                if(pop[iGen][iIndiv][iChromo][iSouris] == i1) {
+                    pop[iGen][iIndiv][iChromo][iSouris] = i2;
+                } else if (pop[iGen][iIndiv][iChromo][iSouris] == i2) {
+                    pop[iGen][iIndiv][iChromo][iSouris] = i1;
+                }
+            }
         }
     }
 }
@@ -342,6 +412,10 @@ void algorithmeTraitement::restartVariablesLocales()
 {
     sourisDispo[0].clear();
     sourisDispo[1].clear();
+    sourisDispoId[0].clear();
+    sourisDispoId[1].clear();
     groupes.clear();
+    bestBestScore = 1000*1000*1000;
+    idBestBestScore = 0;
 }
 

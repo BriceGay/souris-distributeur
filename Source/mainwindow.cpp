@@ -38,10 +38,7 @@
 
 
 
-struct Groupe {
-    int tailleTotale;
-    double valeurAdditionnelle;
-};
+
 
 
 QStandardItemModel *tableauDonnees = new QStandardItemModel(0,2);

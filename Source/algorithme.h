@@ -27,17 +27,18 @@
 
 
 struct Groupe {
-    unsigned int taille;
+    int taille;
     double valAddi;
+    int valAddiId;
 };
 
 
 struct RandTable {
-    unsigned int id;
-    unsigned int random;
-    void update(unsigned int i) {
+    int id;
+    int random;
+    void update(int i) {
         id = i;
-        random = static_cast<unsigned int>(rand());
+        random = static_cast<int>(rand());
     }
     bool operator < (RandTable &r) {
         return  random < r.random;
@@ -52,9 +53,9 @@ public:
     algorithmeTraitement(int * refProgression);
     void startGenetique();
     void stopGenetique();
-    void setData(vector<Souris> * listeSouris, vector<int> * listeGroupes);
+    void setData(vector<Souris> * listeSouris, vector<int> * listes);
     vector<Souris> * sendResult();
-    vector<unsigned int> * sendConsigne();
+    vector<int> * sendConsigne();
 
 private:
     void init();
@@ -70,54 +71,57 @@ private:
 
 
     vector<Souris> mSouris;
-    vector<unsigned int> taillesGroupes;
+    vector<int> taillesGroupes;
 
-    unsigned int nbSourisUtilisees;
-    unsigned int nbSourisAEcarter;
-    double globMoy, globMoyC;
+    int nbSourisUtilisees;
+    int nbSourisAEcarter;
+    long double globMoy, globMoyC;
 
-    unsigned int nbGroupesImpairs;
-    unsigned int bMin, bMax;
+    int nbGroupesImpairs;
+    int bMin, bMax;
 
     vector<Groupe> groupes;
     vector<double> sourisDispo[2];
-    unsigned int tailleChromoTheorique, tailleChromoReel;
+    vector<int> sourisDispoId[2];
+    int tailleChromoAvecDernier, tailleChromoSansDernier;
 
     #define NB_MAX_SOURIS 300
-    #define MAX_NB_GRP 50
-    #define TAILLE_POP 100
-    #define PRESSIONS_SELECTION 70 //lors de la selection, la proba que le meilleur individu soit selectionné est  PRESSIONS_SELECTION / DIVISEUR_POURCENTAGES
-    #define NB_INDIVIDUS_PARENTS 30
-    #define MAX_NB_GENERATION 100000
-    #define PROBA_MUTATION 1
+    #define MAX_NB_GRP 100
+    #define TAILLE_POP 300
+    #define PRESSIONS_SELECTION 80 //lors de la selection, la proba que le meilleur individu soit selectionné est PRESSIONS_SELECTION / DIVISEUR_POURCENTAGES
+    #define NB_INDIVIDUS_PARENTS 50
+    #define MAX_NB_GENERATION 10000
+    #define PROBA_MUTATION 0
     #define DIVISEUR_POURCENTAGES 100
 
     bool iGen = 0;
 
-    unsigned int lastGrpId;
+    int lastGrpId;
 
 
-    unsigned short pop[2][TAILLE_POP][2][NB_MAX_SOURIS/2];//WARNING limite le nb de souris
-    long double scoreIndiv[TAILLE_POP];
-    unsigned int iSouris;//attention à l'utilisation dans des fonctions
+    short pop[2][TAILLE_POP][2][NB_MAX_SOURIS/2];//WARNING limite le nb de souris
+    int scoreIndiv[TAILLE_POP];
+    int iSouris;//attention à l'utilisation dans des fonctions
 
-    short curTest = 0;
-    short nbDejaVu[2][NB_MAX_SOURIS/2];
+    int curTest = 0;
+    int nbDejaVu[2][NB_MAX_SOURIS/2];
     RandTable tablePermutation[NB_MAX_SOURIS / 2];
 
 
-    double bestBestScore = 1000000;
+    int bestBestScore;
+    int idBestBestScore = 1000000;
+    vector<int> memoryBestBestScore[2];
 
 
-    double moyGrp[MAX_NB_GRP], moyGrpC[MAX_NB_GRP];
-    double moyMoy, moyMoyC;
-    unsigned int curReadId;
-    unsigned int startReadId;
-    double bestScore;
-    unsigned int idBestScore;
+    long double moyGrp[MAX_NB_GRP], moyGrpC[MAX_NB_GRP];
+    long double moyMoy, moyMoyC;
+    int curReadId;
+    int startReadId;
+    int bestScore;
+    int idBestScore;
 
 
-    unsigned short iConcurrent[2];
+    short iConcurrent[2];
     bool iSelec;
 
 
@@ -126,6 +130,9 @@ private:
     int iSouris2;
     int i1, i2, iChromo, swapNb;
 
+    short pas;
+
+    vector<Souris> result;
 
 };
 
